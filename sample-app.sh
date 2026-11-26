@@ -1,22 +1,28 @@
+cat << 'EOF' > ~/labs/devnet-src/jenkins/sample-app/sample-app.sh
 #!/bin/bash
 
-mkdir tempdir
-mkdir tempdir/templates
-mkdir tempdir/static
+rm -rf tempdir
+mkdir -p tempdir/templates
+mkdir -p tempdir/static
 
 cp sample_app.py tempdir/.
 cp -r templates/* tempdir/templates/.
 cp -r static/* tempdir/static/.
 
-echo "FROM python:3.8-slim-buster" >> tempdir/Dockerfile
-echo "RUN pip install --progress-bar off flask" >> tempdir/Dockerfile
-echo "COPY  ./static /home/myapp/static/" >> tempdir/Dockerfile
-echo "COPY  ./templates /home/myapp/templates/" >> tempdir/Dockerfile
-echo "COPY  sample_app.py /home/myapp/" >> tempdir/Dockerfile
-echo "EXPOSE 5050" >> tempdir/Dockerfile
-echo "CMD python /home/myapp/sample_app.py" >> tempdir/Dockerfile
+cat << 'DOCKERFILE' > tempdir/Dockerfile
+FROM python:3.11-slim
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org --progress-bar off flask
+COPY ./static /home/myapp/static/
+COPY ./templates /home/myapp/templates/
+COPY sample_app.py /home/myapp/
+EXPOSE 5050
+CMD ["python", "/home/myapp/sample_app.py"]
+DOCKERFILE
 
 cd tempdir
 docker build -t sampleapp .
+docker rm -f samplerunning 2>/dev/null || true
 docker run -t -d -p 5050:5050 --name samplerunning sampleapp
-docker ps -a 
+docker ps -a
+EOF
+chmod +x ~/labs/devnet-src/jenkins/sample-app/sample-app.sh
